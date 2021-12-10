@@ -13,8 +13,9 @@
  */
 
 const edgex = require('./edgex_interface')
-
-var Onem2mClient = require('./onem2m_client');
+const Onem2mClient = require('./onem2m_client');
+var mqtt = require('mqtt');
+const { device } = require('./conf');
 
 var options = {
     protocol: conf.useprotocol,
@@ -89,8 +90,61 @@ function create_cnt_all(count, callback) {
     }
 }
 
-function setup() {
-    setTimeout(setup_resources, 100, 'crtae');
+function mqtt_init() {
+    const topic = "EdgeXEvents";
+
+    var connectOptions = {
+        host: 'localhost',
+        port: '1883',
+        //host: conf.host,
+        //port: conf.mqttport,
+        protocol: "mqtt",
+        keepalive: 10,
+        protocolId: "MQTT",
+        protocolVersion: 4,
+        clean: true,
+        reconnectPeriod: 2000,
+        connectTimeout: 2000,
+        rejectUnauthorized: false
+    };
+
+    mqtt_client = mqtt.connect(connectOptions);
+
+    mqtt_client.on('connect', function () {
+        mqtt_client.subscribe(topic);
+    });
+
+    mqtt_client.on('message', mqtt_message_handler);
+
+    function mqtt_message_handler(topic, message) {
+        var msg_str = message.toString()
+        console.log(msg_str)
+        var jsonObj = JSON.parse(msg_str);
+        
+        deviceName = jsonObj['deviceName']
+        mi = jsonObj['tags']['mi']
+        typeName = jsonObj['readings'][0]['resourceName']
+        typeValue = jsonObj['readings'][0]['value']
+
+        data_json = {
+            device : deviceName,
+            mi : mi,
+            name : typeName,
+            value : typeValue
+        }
+
+        data_str = JSON.stringify(data_json)
+
+        onem2m_client.create_cin(conf.gateway_path+'/devices/'+deviceName+'/data', 1, data_str, null, function(rsc, res_body, parent, socket) {
+            console.log(res_body)
+            if(rsc == 9999) {
+                console.log('[???} create container error!');
+            }
+            else {
+                console.log('x-msm-rsc : ' + rsc)                
+            }
+        })
+    }
 }
 
 function setup_resources(_status) {
@@ -169,6 +223,43 @@ function setup_resources(_status) {
     }
 }
 
+function device_register(_status, device_id) {
+    if (_status == "device_registration") {
+        var parent = '/' + conf.cse.name + '/' + conf.ae.name + '/gateways/' + conf.gateway_name + '/devices';
+        var rn = device_id;
+        onem2m_client.create_cnt(parent, rn, 0, function (rsc, res_body, count) {
+            if (rsc == 5106 || rsc == 2001 || rsc == 4105) {
+                setTimeout(device_register, 100, "device_registration_completed", device_id)
+            }
+            else {
+                console.log('[???} create container error!');
+            }
+        });
+    } else if (_status == "device_registration_completed"){
+        var parent = '/' + conf.cse.name + '/' + conf.ae.name + '/gateways/' + conf.gateway_name + '/devices/' + device_id;
+        var rn = 'info';
+        onem2m_client.create_cnt(parent, rn, 0, function (rsc, res_body, count) {
+            if (rsc == 5106 || rsc == 2001 || rsc == 4105) {
+                
+            }
+            else {
+                console.log('[???} create container error!');
+            }
+        });
+
+        parent = '/' + conf.cse.name + '/' + conf.ae.name + '/gateways/' + conf.gateway_name + '/devices/' + device_id;
+        rn = 'data';
+        onem2m_client.create_cnt(parent, rn, 0, function (rsc, res_body, count) {
+            if (rsc == 5106 || rsc == 2001 || rsc == 4105) {
+                
+            }
+            else {
+                console.log('[???} create container error!');
+            }
+        });
+    }
+}
+
 onem2m_client.on('notification', function (source_uri, cinObj) {
 
     console.log(source_uri, cinObj);
@@ -178,11 +269,17 @@ onem2m_client.on('notification', function (source_uri, cinObj) {
     var content = cinObj.con;
 
     if(event_cnt_name === 'service_deploy') {
-        // send to tas
+        
         console.log("OK")
     }
 });
 
+function setup() {
+    setTimeout(setup_resources, 100, 'crtae');
+    mqtt_init()    
+}
+
 module.exports = {
-    setup: setup
+    setup: setup,
+    device_register : device_register
 }

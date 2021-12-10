@@ -40,30 +40,32 @@ ae.bodytype     = 'json'; // select 'json' or 'xml' or 'cbor'
 ae.tasport      = '3105';
 /*********** build ae (Disposable IoT Edge Gateway) end *************/
 
+conf.gateway_name = 'gateway1';
+conf.gateway_path = '/' + cse.name + '/' + ae.name + '/gateways/' + conf.gateway_name;
+
 // build cnt
 var count = 0;
-conf.gateway_name = 'Gateway1'
 cnt_arr[count] = {};
 cnt_arr[count].parent = '/' + cse.name + '/' + ae.name;
+cnt_arr[count++].name = "gateways";
+cnt_arr[count] = {};
+cnt_arr[count].parent = '/' + cse.name + '/' + ae.name + '/gateways';
 cnt_arr[count++].name = conf.gateway_name;
 cnt_arr[count] = {};
-cnt_arr[count].parent = '/' + cse.name + '/' + ae.name + '/' + conf.gateway_name;
-cnt_arr[count++].name = 'gateway_information';
+cnt_arr[count].parent = '/' + cse.name + '/' + ae.name + '/gateways/' + conf.gateway_name;
+cnt_arr[count++].name = 'info';
 cnt_arr[count] = {};
-cnt_arr[count].parent = '/' + cse.name + '/' + ae.name + '/' + conf.gateway_name;
+cnt_arr[count].parent = '/' + cse.name + '/' + ae.name + '/gateways/' + conf.gateway_name;
 cnt_arr[count++].name = 'service_deploy';
 cnt_arr[count] = {};
-cnt_arr[count].parent = '/' + cse.name + '/' + ae.name + '/' + conf.gateway_name;
-cnt_arr[count++].name = 'stationary_device';
-cnt_arr[count] = {};
-cnt_arr[count].parent = '/' + cse.name + '/' + ae.name + '/' + conf.gateway_name;
-cnt_arr[count++].name = 'disposable_device';
+cnt_arr[count].parent = '/' + cse.name + '/' + ae.name + '/gateways/' + conf.gateway_name;
+cnt_arr[count++].name = 'devices';
 
 conf.port = 8282
 count = 0;
 sub_arr[count] = {};
-sub_arr[count].parent = '/' + cse.name + '/' + ae.name + '/' + conf.gateway_name + '/' + 'service_deploy';
-sub_arr[count].name = 'sub';
+sub_arr[count].parent = '/' + cse.name + '/' + ae.name + '/gateways/' + conf.gateway_name + '/' + 'service_deploy';
+sub_arr[count].name = 'service_deploy_sub';
 sub_arr[count++].nu = 'mqtt://' + cse.host + '/' + ae.id + '?ct=json'; // mqtt
 
 conf.usesecure  = 'disable';

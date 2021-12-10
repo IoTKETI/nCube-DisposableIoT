@@ -12,8 +12,8 @@
  * Created by SEOKJUN, LEE in KETI on 2021-12-03.
  */
 
-const EDGEX_SUBSCRIPTION_PATH = '/api/v1/subscription';
-const EDGEX_SUBSCRIPTION_PORT = '48060';
+const EDGEX_SUBSCRIPTION_PATH = '/api/v2/subscription';
+const EDGEX_SUBSCRIPTION_PORT = '59860';
 
 function http_post(path, port, bodyString) {
     var options = {
@@ -33,6 +33,7 @@ function http_post(path, port, bodyString) {
         res.on('data', function (chunk) {
             res_body += chunk;
         });
+        console.log(res_body)
     });
 
     req.on('error', function (e) {
@@ -44,29 +45,34 @@ function http_post(path, port, bodyString) {
 }
 
 function subscribe_device_register(){
-    request = {
-        slug: "device_registration_handler",
-        receiver: "nCube-DisposableIoT",
-        subscribedCategories: [
-            "HW_HEALTH"
-        ],
-        subscribedLabels: [
-            "STATIONARY_DEVICE",
-            "DISPOSABLE_DEVICE"
-        ],
-        channels: [
-            {
-            "type": "REST",
-            "httpMethod": "POST",
-            "url": "http://dockerhost:8282/device/register"
-            }              
-        ]
-    };
+    request = [{
+        apiVersion: "v2",
+        subscription: {
+            name: "DisposableIoT-Device-Registration-Handler",
+            receiver: "nCube-DisposableIoT",
+            adminState: "UNLOCKED",
+            categories: [
+                "DisposableIoT"
+            ],
+            labels: [
+                "device-registration"
+            ],            
+            channels: [
+                {
+                    type: "REST",
+                    httpMethod: "POST",
+                    host: "dockerhost",
+                    port: 8282,
+                    path: "/device/register"
+                }              
+            ]
+        }
+    }];
     
     bodyString = JSON.stringify(request);
     console.log(bodyString)
     http_post(EDGEX_SUBSCRIPTION_PATH, EDGEX_SUBSCRIPTION_PORT, bodyString, function (res, res_body) {
-        console.log(res_body);
+        console.log(res, res_body);
     });
 }
 

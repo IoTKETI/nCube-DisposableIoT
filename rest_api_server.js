@@ -14,37 +14,16 @@
 
 const express = require("express");
 const app = express();
+app.use(express.json());
+const onem2m_interface = require("./onem2m_interface")
 
 app.use(express.text());
 app.use(express.urlencoded({extended: true}));
 
 app.post("/device/register", (req, res) => {
-    body_json = JSON.parse(req.body.replaceAll('\'', '\"'));
-
-    device_id = body_json.device_id;
-    device_category = body_json.device_category;
+    device_id = req.body.device_id;
     
-    var parent = '/' + conf.cse.name + '/' + conf.ae.name + '/' + conf.gateway_name;
-    var rn = device_category;
-    onem2m_client.create_cnt(parent, rn, 0, function (rsc, res_body, count) {
-        if (rsc == 5106 || rsc == 2001 || rsc == 4105) {
-            
-        }
-        else {
-            console.log('[???} create container error!');
-        }
-    });
-
-    var parent = '/' + conf.cse.name + '/' + conf.ae.name + '/' + conf.gateway_name + '/' + device_category;
-    var rn = device_id;
-    onem2m_client.create_cnt(parent, rn, 0, function (rsc, res_body, count) {
-        if (rsc == 5106 || rsc == 2001 || rsc == 4105) {
-            
-        }
-        else {
-            console.log('[???} create container error!');
-        }
-    });
+    setTimeout(onem2m_interface.device_register, 100, "device_registration", device_id)
 
     res.json({ok: true})
 });
